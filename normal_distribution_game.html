@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Normal Distribution Table Master Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .table-cell-custom {
+            transition: all 0.2s ease;
+        }
+        .highlight-cell {
+            background-color: #fef08a !important;
+            color: #854d0e !important;
+            font-weight: 700;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white shadow-md py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="bg-indigo-600 p-2 rounded-xl text-2xl">📊</span>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Normal Distribution Table Master</h1>
+                <p class="text-xs text-indigo-200">Interactive Statistics Training Game</p>
+            </div>
+        </div>
+        <div id="score-display" class="hidden items-center space-x-4 bg-indigo-800 px-4 py-2 rounded-xl text-sm font-semibold">
+            <span>Score: <strong id="current-score" class="text-yellow-300">0</strong> / 26</span>
+            <span>Round: <strong id="current-round">1</strong>/13</span>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left / Top Panel: Game Interaction -->
+        <section class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+            
+            <!-- Welcome / Start Screen -->
+            <div id="start-screen" class="space-y-6">
+                <div class="text-center space-y-2">
+                    <span class="text-5xl">📈</span>
+                    <h2 class="text-2xl font-bold text-slate-900">Master the Z-Table</h2>
+                    <p class="text-sm text-slate-600">
+                        Test your skills reading and interpreting the standard normal distribution table across 13 sequenced challenges!
+                    </p>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl space-y-2 text-sm text-indigo-900">
+                    <h3 class="font-bold flex items-center gap-1.5"><span>🎯</span> Game Structure:</h3>
+                    <ul class="list-disc list-inside space-y-1 text-indigo-800">
+                        <li><strong>Round 1:</strong> Find Area from a specific Z score.</li>
+                        <li><strong>Rounds 2–5:</strong> Probability Inequalities (Left, Right, Between, Symmetric).</li>
+                        <li><strong>Rounds 6–7:</strong> Reverse Z lookup (2 questions finding Z from Area).</li>
+                        <li><strong>Rounds 8–10:</strong> Real-World Business Applications (Step selection + Table click).</li>
+                        <li><strong>Rounds 11–13:</strong> Sampling Distribution of Sample Mean (Step selection + Table click).</li>
+                    </ul>
+                </div>
+
+                <button onclick="startGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2">
+                    <span>Start Challenge</span>
+                    <span>→</span>
+                </button>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div id="quiz-screen" class="hidden space-y-6">
+                <!-- Progress bar -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <span id="question-type-label">Round 1</span>
+                        <span id="question-progress">1 of 13</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-indigo-600 h-full w-[8%] transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                    <div id="question-prompt" class="text-base font-semibold text-slate-900 leading-snug">
+                        <!-- Dynamic Question Prompt -->
+                    </div>
+
+                    <!-- Diagram Selection Area (3 Options for Standard Rounds) -->
+                    <div id="diagram-section" class="space-y-2">
+                        <div class="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                            <span>📊</span> Select the correct normal distribution diagram:
+                        </div>
+                        <div id="diagram-options" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <!-- Populated dynamically with 3 SVG choices -->
+                        </div>
+                    </div>
+
+                    <!-- Business Problem Step Selection Area (3 Options for Business Rounds) -->
+                    <div id="step-section" class="hidden space-y-2">
+                        <div class="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                            <span>🧭</span> Step 1: Select the correct Z-score conversion & probability formula:
+                        </div>
+                        <div id="step-options" class="space-y-2">
+                            <!-- Populated dynamically with 3 step choices -->
+                        </div>
+                    </div>
+
+                    <!-- Detailed Beginner-Friendly Explanation Card -->
+                    <div id="explanation-card" class="bg-indigo-50/70 border border-indigo-100 p-3.5 rounded-xl text-xs text-indigo-950 space-y-1.5">
+                        <div class="font-bold flex items-center gap-1.5 text-indigo-900">
+                            <span>📖</span> <span id="explanation-title">How to read this:</span>
+                        </div>
+                        <p id="explanation-text" class="leading-relaxed text-indigo-900/90">
+                            <!-- Dynamic explanation text -->
+                        </p>
+                    </div>
+                    <div id="visual-cue" class="bg-white p-3 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center justify-center gap-2">
+                        <span>💡 Tip: Click cells on the right table to inspect or verify your lookup!</span>
+                    </div>
+                </div>
+
+                <!-- Answer Input Area (Standard Rounds) -->
+                <div id="standard-input-area" class="space-y-3">
+                    <label id="input-label" for="user-answer" class="block text-sm font-medium text-slate-700">Enter your answer (e.g. 0.1915):</label>
+                    <div class="flex space-x-2">
+                        <input type="number" step="0.0001" id="user-answer" placeholder="0.0000" class="flex-grow border border-slate-300 rounded-xl px-4 py-3 text-lg font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <button onclick="submitAnswer()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow transition active:scale-95">Submit</button>
+                    </div>
+                </div>
+
+                <!-- Table-Click Answer Area (Business Problem Rounds) -->
+                <div id="business-input-area" class="hidden space-y-3">
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2">
+                        <div class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                            <span>🖱️</span> Step 2: Click the exact table value on the right for the Z-score lookup!
+                        </div>
+                        <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-amber-200">
+                            <span class="text-xs text-slate-500">Selected Table Value:</span>
+                            <span id="selected-table-val-display" class="font-mono font-bold text-base text-indigo-700">None clicked yet</span>
+                        </div>
+                    </div>
+                    <button onclick="submitAnswer()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow transition active:scale-95">Submit Business Solution</button>
+                </div>
+
+                <!-- Feedback Box -->
+                <div id="feedback-box" class="hidden p-4 rounded-xl text-sm font-medium"></div>
+
+                <!-- Next Button -->
+                <button id="next-btn" onclick="nextRound()" class="hidden w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition">
+                    Next Challenge →
+                </button>
+            </div>
+
+            <!-- Result Summary Screen -->
+            <div id="result-screen" class="hidden space-y-6 text-center py-4">
+                <div class="space-y-3">
+                    <span class="text-6xl" id="result-emoji">🏆</span>
+                    <h2 class="text-2xl font-bold text-slate-900">Activity Completed!</h2>
+                    <p class="text-slate-600 text-sm">Here is how you performed across standard lookups, reverse Z, and business problems:</p>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl max-w-xs mx-auto space-y-2">
+                    <div class="text-xs uppercase font-bold text-indigo-600 tracking-wider">Final Score</div>
+                    <div class="text-4xl font-extrabold text-indigo-900"><span id="final-score">0</span> / 26</div>
+                    <div id="score-remark" class="text-sm font-medium text-indigo-700 pt-1">Great job!</div>
+                </div>
+
+                <button onclick="restartGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow transition">
+                    Play Again 🔄
+                </button>
+            </div>
+
+            <!-- Footer note -->
+            <div class="pt-6 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-400">Based on standard cumulative area from mean (Z = 0). Note: For values above 3.09, use 0.4999.</p>
+            </div>
+        </section>
+
+        <!-- Right Panel: Exact Normal Distribution Table Reference -->
+        <section class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h2 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                        <span>📋</span> AREA UNDER THE NORMAL CURVE
+                    </h2>
+                    <p class="text-xs text-slate-500">Exact reference table matching the provided source image.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="clearTableHighlights()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition font-medium">Clear Highlights</button>
+                </div>
+            </div>
+
+            <!-- Scrollable Table Container -->
+            <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-[550px] relative shadow-inner">
+                <table id="z-table" class="w-full text-xs font-mono text-center border-collapse">
+                    <thead class="bg-slate-100 sticky top-0 z-10 text-slate-700 font-bold border-b border-slate-200 shadow-sm">
+                        <tr>
+                            <th class="p-2.5 border-r border-slate-200 bg-slate-100">z</th>
+                            <th class="p-2.5 border-r border-slate-200">0.00</th>
+                            <th class="p-2.5 border-r border-slate-200">0.01</th>
+                            <th class="p-2.5 border-r border-slate-200">0.02</th>
+                            <th class="p-2.5 border-r border-slate-200">0.03</th>
+                            <th class="p-2.5 border-r border-slate-200">0.04</th>
+                            <th class="p-2.5 border-r border-slate-200">0.05</th>
+                            <th class="p-2.5 border-r border-slate-200">0.06</th>
+                            <th class="p-2.5 border-r border-slate-200">0.07</th>
+                            <th class="p-2.5 border-r border-slate-200">0.08</th>
+                            <th class="p-2.5">0.09</th>
+                        </tr>
+                    </thead>
+                    <tbody id="z-table-body" class="divide-y divide-slate-100 bg-white">
+                        <!-- Populated dynamically by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-xs text-slate-500 bg-amber-50 border border-amber-200 p-2.5 rounded-lg flex items-center gap-2">
+                <span>📌</span>
+                <span><strong>NOTE:</strong> For values of z above 3.09, use 0.4999 for the area. Click any cell to inspect its value.</span>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Exact Z-Table Data from the provided image
+        const zTableData = {
+            "0.0": [0.0000, 0.0040, 0.0080, 0.0120, 0.0160, 0.0199, 0.0239, 0.0279, 0.0319, 0.0359],
+            "0.1": [0.0398, 0.0438, 0.0478, 0.0517, 0.0557, 0.0596, 0.0636, 0.0675, 0.0714, 0.0753],
+            "0.2": [0.0793, 0.0832, 0.0871, 0.0910, 0.0948, 0.0987, 0.1026, 0.1064, 0.1103, 0.1141],
+            "0.3": [0.1179, 0.1217, 0.1255, 0.1293, 0.1331, 0.1368, 0.1406, 0.1443, 0.1480, 0.1517],
+            "0.4": [0.1554, 0.1591, 0.1628, 0.1664, 0.1700, 0.1736, 0.1772, 0.1808, 0.1844, 0.1879],
+            "0.5": [0.1915, 0.1950, 0.1985, 0.2019, 0.2054, 0.2088, 0.2123, 0.2157, 0.2190, 0.2224],
+            "0.6": [0.2257, 0.2291, 0.2324, 0.2357, 0.2389, 0.2422, 0.2454, 0.2486, 0.2517, 0.2549],
+            "0.7": [0.2580, 0.2611, 0.2642, 0.2673, 0.2704, 0.2734, 0.2764, 0.2794, 0.2823, 0.2852],
+            "0.8": [0.2881, 0.2910, 0.2939, 0.2967, 0.2995, 0.3023, 0.3051, 0.3078, 0.3106, 0.3133],
+            "0.9": [0.3159, 0.3186, 0.3212, 0.3238, 0.3264, 0.3289, 0.3315, 0.3340, 0.3365, 0.3389],
+            "1.0": [0.3413, 0.3438, 0.3461, 0.3485, 0.3508, 0.3531, 0.3554, 0.3577, 0.3599, 0.3621],
+            "1.1": [0.3643, 0.3665, 0.3686, 0.3708, 0.3729, 0.3749, 0.3770, 0.3790, 0.3810, 0.3830],
+            "1.2": [0.3849, 0.3869, 0.3888, 0.3907, 0.3925, 0.3944, 0.3962, 0.3980, 0.3997, 0.4015],
+            "1.3": [0.4032, 0.4049, 0.4066, 0.4082, 0.4099, 0.4115, 0.4131, 0.4147, 0.4162, 0.4177],
+            "1.4": [0.4192, 0.4207, 0.4222, 0.4236, 0.4251, 0.4265, 0.4279, 0.4292, 0.4306, 0.4319],
+            "1.5": [0.4332, 0.4345, 0.4357, 0.4370, 0.4382, 0.4394, 0.4406, 0.4418, 0.4429, 0.4441],
+            "1.6": [0.4452, 0.4463, 0.4474, 0.4484, 0.4495, 0.4505, 0.4515, 0.4525, 0.4535, 0.4545],
+            "1.7": [0.4554, 0.4564, 0.4573, 0.4582, 0.4591, 0.4599, 0.4608, 0.4616, 0.4625, 0.4633],
+            "1.8": [0.4641, 0.4649, 0.4656, 0.4664, 0.4671, 0.4678, 0.4686, 0.4693, 0.4699, 0.4706],
+            "1.9": [0.4713, 0.4719, 0.4726, 0.4732, 0.4738, 0.4744, 0.4750, 0.4756, 0.4761, 0.4767],
+            "2.0": [0.4772, 0.4778, 0.4783, 0.4788, 0.4793, 0.4798, 0.4803, 0.4808, 0.4812, 0.4817],
+            "2.1": [0.4821, 0.4826, 0.4830, 0.4834, 0.4838, 0.4842, 0.4846, 0.4850, 0.4854, 0.4857],
+            "2.2": [0.4861, 0.4864, 0.4868, 0.4871, 0.4875, 0.4878, 0.4881, 0.4884, 0.4887, 0.4890],
+            "2.3": [0.4893, 0.4896, 0.4898, 0.4901, 0.4904, 0.4906, 0.4909, 0.4911, 0.4913, 0.4916],
+            "2.4": [0.4918, 0.4920, 0.4922, 0.4925, 0.4927, 0.4929, 0.4931, 0.4932, 0.4934, 0.4936],
+            "2.5": [0.4938, 0.4940, 0.4941, 0.4943, 0.4945, 0.4946, 0.4948, 0.4949, 0.4951, 0.4952],
+            "2.6": [0.4953, 0.4955, 0.4956, 0.4957, 0.4959, 0.4960, 0.4961, 0.4962, 0.4963, 0.4964],
+            "2.7": [0.4965, 0.4966, 0.4967, 0.4968, 0.4969, 0.4970, 0.4971, 0.4972, 0.4973, 0.4974],
+            "2.8": [0.4974, 0.4975, 0.4976, 0.4977, 0.4977, 0.4978, 0.4979, 0.4979, 0.4980, 0.4981],
+            "2.9": [0.4981, 0.4982, 0.4982, 0.4983, 0.4984, 0.4984, 0.4985, 0.4985, 0.4986, 0.4986],
+            "3.0": [0.4987, 0.4987, 0.4987, 0.4988, 0.4988, 0.4989, 0.4989, 0.4989, 0.4990, 0.4990]
+        };
+
+        // Helper to format any decimal number cleanly to 4 decimal places without scientific notation
+        function formatProb(val) {
+            return Number(val).toFixed(4);
+        }
+
+        let currentRoundIndex = 0;
+        let score = 0;
+        let currentQuestion = null;
+        let selectedDiagramIndex = null;
+        let diagramSelectedCorrectly = false;
+        let selectedStepIndex = null;
+        let stepSelectedCorrectly = false;
+        let clickedTableValue = null;
+        let clickedTableZ = null;
+        const totalRounds = 13;
+
+        // Helper to render clean stacked math fractions in HTML
+        function formatMathFraction(numerator, denominator) {
+            return `<span class="inline-flex flex-col items-center align-middle mx-1 font-serif text-xs leading-none"><span class="border-b border-slate-700 px-1.5 pb-0.5">${numerator}</span><span class="px-1.5 pt-0.5">${denominator}</span></span>`;
+        }
+
+        // Helper to render standard error fraction (sd / sqrt(n))
+        function formatStdErrFraction(sd, n) {
+            return `<span class="inline-flex flex-col items-center align-middle mx-0.5 font-serif text-[11px] leading-none"><span class="border-b border-slate-700 px-1 pb-0.5">${sd}</span><span class="px-1 pt-0.5">&radic;${n}</span></span>`;
+        }
+
+        // Helper to retrieve exact area from Z-table
+        function getTableArea(zVal) {
+            const absZ = Math.abs(zVal);
+            if (absZ > 3.09) return 0.4999;
+            const rowKey = absZ.toFixed(2).slice(0, 3);
+            const colIdx = parseInt(absZ.toFixed(2).slice(3), 10);
+            return zTableData[rowKey] ? zTableData[rowKey][colIdx] : 0;
+        }
+
+        // Clear all highlights from the Z-table
+        function clearTableHighlights() {
+            document.querySelectorAll('#z-table-body td').forEach(td => {
+                td.classList.remove('highlight-cell');
+            });
+        }
+
+        // Highlight a specific Z-score cell in the Z-table
+        function highlightZInTable(zVal) {
+            clearTableHighlights();
+            const absZ = Math.abs(zVal);
+            if (absZ > 3.09) return;
+            const rowKey = absZ.toFixed(2).slice(0, 3);
+            const colStr = (parseInt(absZ.toFixed(2).slice(3), 10) * 0.01).toFixed(2);
+            const cell = document.querySelector(`#z-table-body td[data-z-row="${rowKey}"][data-z-col="${colStr}"]`);
+            if (cell) {
+                cell.classList.add('highlight-cell');
+                cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Generate SVG markup for a normal curve with shaded region
+        function getSvgMarkup(mode, zVal1, zVal2 = null) {
+            const zToX = (z) => {
+                let clamped = Math.max(-3.1, Math.min(3.1, z));
+                return 160 + (clamped / 3.1) * 130;
+            };
+
+            const pdf = (z) => {
+                return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+            };
+
+            let pathPoints = [];
+            for (let z = -3.1; z <= 3.1; z += 0.1) {
+                let x = zToX(z);
+                let y = 110 - pdf(z) * 240;
+                pathPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+            }
+            const curveD = `M 20 110 L ${pathPoints.join(' L ')} L 300 110 Z`;
+
+            let shadedPath = '';
+            let z1X = zToX(zVal1);
+            let z2X = zVal2 !== null ? zToX(zVal2) : 160;
+
+            if (mode === 'area') {
+                let minX = Math.min(160, z1X);
+                let maxX = Math.max(160, z1X);
+                shadedPath = generateIntervalPath(minX, maxX, zToX, pdf);
+            } else if (mode === 'inequality_left') {
+                shadedPath = generateIntervalPath(20, z1X, zToX, pdf);
+            } else if (mode === 'inequality_right') {
+                shadedPath = generateIntervalPath(z1X, 300, zToX, pdf);
+            } else if (mode === 'inequality_between') {
+                let b1 = zVal1;
+                let b2 = zVal2 !== null ? zVal2 : Number((Math.min(2.9, Math.abs(zVal1) + 0.85)).toFixed(2));
+                let x1 = zToX(b1);
+                let x2 = zToX(b2);
+                let minX = Math.min(x1, x2);
+                let maxX = Math.max(x1, x2);
+                shadedPath = generateIntervalPath(minX, maxX, zToX, pdf);
+            } else if (mode === 'inequality_symmetric') {
+                let negX = zToX(-Math.abs(zVal1));
+                let posX = zToX(Math.abs(zVal1));
+                shadedPath = generateIntervalPath(negX, posX, zToX, pdf);
+            } else if (mode === 'reverse_z') {
+                let minX = Math.min(160, z1X);
+                let maxX = Math.max(160, z1X);
+                shadedPath = generateIntervalPath(minX, maxX, zToX, pdf);
+            } else if (mode === 'reverse_z_right') {
+                shadedPath = generateIntervalPath(z1X, 300, zToX, pdf);
+            } else if (mode === 'reverse_z_left') {
+                shadedPath = generateIntervalPath(20, z1X, zToX, pdf);
+            }
+
+            let svgHtml = `
+                <svg viewBox="0 0 320 130" class="w-full h-auto">
+                    <line x1="20" y1="110" x2="300" y2="110" stroke="#cbd5e1" stroke-width="1.5" />
+                    <line x1="160" y1="15" x2="160" y2="115" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3" />
+                    <text x="160" y="125" font-size="10" fill="#64748b" text-anchor="middle">0</text>
+                    <path d="${shadedPath}" fill="#6366f1" fill-opacity="0.28" />
+                    <path d="${curveD}" fill="none" stroke="#4f46e5" stroke-width="2" />
+            `;
+
+            if (mode === 'inequality_symmetric') {
+                let negZ = -Math.abs(zVal1);
+                let posZ = Math.abs(zVal1);
+                let nX = zToX(negZ);
+                let pX = zToX(posZ);
+                svgHtml += `
+                    <line x1="${nX}" y1="20" x2="${nX}" y2="110" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <circle cx="${nX}" cy="110" r="3" fill="#e11d48" />
+                    <text x="${nX}" y="15" font-size="9" fill="#e11d48" text-anchor="middle">${negZ}</text>
+                    <line x1="${pX}" y1="20" x2="${pX}" y2="110" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <circle cx="${pX}" cy="110" r="3" fill="#e11d48" />
+                    <text x="${pX}" y="15" font-size="9" fill="#e11d48" text-anchor="middle">${posZ}</text>
+                `;
+            } else if (mode === 'inequality_between') {
+                let b1 = zVal1;
+                let b2 = zVal2 !== null ? zVal2 : Number((Math.min(2.9, Math.abs(zVal1) + 0.85)).toFixed(2));
+                let x1 = zToX(b1);
+                let x2 = zToX(b2);
+                svgHtml += `
+                    <line x1="${x1}" y1="20" x2="${x1}" y2="110" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <circle cx="${x1}" cy="110" r="3" fill="#e11d48" />
+                    <text x="${x1}" y="15" font-size="9" fill="#e11d48" text-anchor="middle">${b1}</text>
+                    <line x1="${x2}" y1="20" x2="${x2}" y2="110" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <circle cx="${x2}" cy="110" r="3" fill="#e11d48" />
+                    <text x="${x2}" y="15" font-size="9" fill="#e11d48" text-anchor="middle">${b2}</text>
+                `;
+            } else if (mode === 'reverse_z' || mode === 'reverse_z_right' || mode === 'reverse_z_left') {
+                svgHtml += `
+                    <line x1="${z1X}" y1="20" x2="${z1X}" y2="110" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <circle cx="${z1X}" cy="110" r="3" fill="#e11d48" />
+                    <text x="${z1X}" y="15" font-size="10" font-weight="bold" fill="#e11d48" text-anchor="middle">z = ?</text>
+                `;
+            } else {
+                svgHtml += `
+                    <line x1="${z1X}" y1="20" x2="${z1X}" y2="110" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <circle cx="${z1X}" cy="110" r="3" fill="#e11d48" />
+                    <text x="${z1X}" y="15" font-size="9" fill="#e11d48" text-anchor="middle">${zVal1}</text>
+                `;
+            }
+            svgHtml += `</svg>`;
+            return svgHtml;
+        }
+
+        function generateIntervalPath(startX, endX, zToX, pdf) {
+            let pts = [];
+            for (let x = startX; x <= endX; x += 3) {
+                let z = ((x - 160) / 130) * 3.1;
+                let y = 110 - pdf(z) * 240;
+                pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+            }
+            return `M ${startX} 110 L ${pts.join(' L ')} L ${endX} 110 Z`;
+        }
+
+        // Render Z Table into DOM
+        function renderTable() {
+            const tbody = document.getElementById('z-table-body');
+            tbody.innerHTML = '';
+            
+            for (const [zKey, arr] of Object.entries(zTableData)) {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                
+                // Row Header
+                const th = document.createElement('th');
+                th.className = 'p-2 bg-slate-50 font-bold border-r border-slate-200 text-slate-700';
+                th.innerText = zKey;
+                tr.appendChild(th);
+
+                arr.forEach((val, colIdx) => {
+                    const td = document.createElement('td');
+                    td.className = 'p-2 border-r border-slate-100 table-cell-custom cursor-pointer hover:bg-indigo-50 font-medium';
+                    td.innerText = formatProb(val);
+                    td.dataset.zRow = zKey;
+                    td.dataset.zCol = (colIdx * 0.01).toFixed(2);
+                    td.title = `Z = ${(parseFloat(zKey) + colIdx * 0.01).toFixed(2)}`;
+                    td.onclick = () => highlightCell(td);
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            }
+        }
+
+        function highlightCell(tdElement) {
+            clearTableHighlights();
+            tdElement.classList.add('highlight-cell');
+            clickedTableValue = parseFloat(tdElement.innerText);
+            clickedTableZ = (parseFloat(tdElement.dataset.zRow) + parseFloat(tdElement.dataset.zCol)).toFixed(2);
+            const displayEl = document.getElementById('selected-table-val-display');
+            if (displayEl) {
+                displayEl.innerText = `${formatProb(clickedTableValue)} (at Z = ${clickedTableZ})`;
+            }
+        }
+
+        // Generate Random Questions per Round Sequence
+        function generateQuestion(round) {
+            const randomZ = () => parseFloat((Math.random() * 2.8 + 0.2).toFixed(2));
+
+            let q;
+            switch(round) {
+                case 0: {
+                    const z = randomZ();
+                    const area = getTableArea(z);
+                    q = {
+                        typeLabel: "Round 1: Find Area from Center",
+                        prompt: `Find the probability area under the standard normal curve between the mean (Z = 0) and the score Z = ${z}.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(0 < Z < ${z})</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: `This asks for the shaded area starting from the exact middle of the bell curve (Z = 0) moving right up to Z = ${z}. To solve this, look up row <strong>${z.toFixed(1).slice(0, -1)}...</strong> and column <strong>0.0${(z*100)%10}</strong> in the reference table on the right.`,
+                        correctAnswer: parseFloat(formatProb(area)),
+                        zVal: z,
+                        zVal2: null,
+                        mode: 'area'
+                    };
+                    break;
+                }
+                case 1: {
+                    const z = parseFloat((Math.random() * 2.5 + 0.3).toFixed(2));
+                    const isNegative = Math.random() < 0.5;
+                    const zVal = isNegative ? -z : z;
+                    const tableArea = getTableArea(z);
+                    const ans = isNegative ? (0.5 - tableArea) : (0.5 + tableArea);
+                    q = {
+                        typeLabel: "Round 2: Left-Tail Probability",
+                        prompt: `Find the cumulative probability that the random variable is less than ${zVal}.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(Z < ${zVal})</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: isNegative 
+                            ? `Since ${zVal} is to the <strong>left</strong> of the mean (Z = 0), we take half of the curve (0.5000) and <strong>subtract</strong> the table area for Z = ${z}.`
+                            : `Since ${zVal} is to the <strong>right</strong> of the mean (Z = 0), we take half of the curve (0.5000) and <strong>add</strong> the table area for Z = ${z}.`,
+                        correctAnswer: parseFloat(formatProb(ans)),
+                        zVal: zVal,
+                        zVal2: null,
+                        mode: 'inequality_left'
+                    };
+                    break;
+                }
+                case 2: {
+                    const z = parseFloat((Math.random() * 2.5 + 0.3).toFixed(2));
+                    const isNegative = Math.random() < 0.5;
+                    const zVal = isNegative ? -z : z;
+                    const tableArea = getTableArea(z);
+                    const ans = isNegative ? (0.5 + tableArea) : (0.5 - tableArea);
+                    q = {
+                        typeLabel: "Round 3: Right-Tail Probability",
+                        prompt: `Find the cumulative probability that the random variable is greater than ${zVal}.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(Z > ${zVal})</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: isNegative
+                            ? `For a right-tail area past a negative value (${zVal}), we take half of the bell curve (0.5000) and <strong>add</strong> the table area for Z = ${z}.`
+                            : `For a right-tail area past a positive value (${zVal}), we take half of the bell curve (0.5000) and <strong>subtract</strong> the table area for Z = ${z}.`,
+                        correctAnswer: parseFloat(formatProb(ans)),
+                        zVal: zVal,
+                        zVal2: null,
+                        mode: 'inequality_right'
+                    };
+                    break;
+                }
+                case 3: {
+                    const z1 = parseFloat((Math.random() * 1.2 + 0.1).toFixed(2));
+                    const z2 = parseFloat((Math.random() * 1.5 + z1 + 0.2).toFixed(2));
+                    const a1 = getTableArea(z1);
+                    const a2 = getTableArea(z2);
+                    const ans = Math.abs(a2 - a1);
+                    q = {
+                        typeLabel: "Round 4: Between Two Z Values",
+                        prompt: `Find the probability for the region between two Z scores: ${z1} and ${z2}.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(${z1} < Z < ${z2})</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: `Both values are on the same side of the mean (Z = 0). Look up the table area for both Z = ${z2} and Z = ${z1}, then <strong>subtract the smaller area from the larger area</strong> to find the slice in between.`,
+                        correctAnswer: parseFloat(formatProb(ans)),
+                        zVal: z1,
+                        zVal2: z2,
+                        mode: 'inequality_between'
+                    };
+                    break;
+                }
+                case 4: {
+                    const z = parseFloat((Math.random() * 2.0 + 0.4).toFixed(2));
+                    const tableArea = getTableArea(z);
+                    const ans = 2 * tableArea;
+                    q = {
+                        typeLabel: "Round 5: Symmetric Interval",
+                        prompt: `Find the probability for the symmetric interval around the mean.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(-${z} < Z < ${z})</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: `This interval stretches equally to the left and right of the mean (Z = 0). Look up the table area for Z = ${z} and simply <strong>multiply it by 2</strong> because the standard normal curve is symmetrical.`,
+                        correctAnswer: parseFloat(formatProb(ans)),
+                        zVal: z,
+                        zVal2: null,
+                        mode: 'inequality_symmetric'
+                    };
+                    break;
+                }
+                case 5: {
+                    const sampleZKeys = Object.keys(zTableData);
+                    const randRow = sampleZKeys[Math.floor(Math.random() * sampleZKeys.length)];
+                    const randColIdx = Math.floor(Math.random() * 10);
+                    const targetArea = zTableData[randRow][randColIdx];
+                    const targetZ = parseFloat((parseFloat(randRow) + randColIdx * 0.01).toFixed(2));
+
+                    q = {
+                        typeLabel: "Round 6: Reverse Z Lookup (1 of 2)",
+                        prompt: `Given that the probability area between the mean (Z = 0) and an unknown positive Z score is <strong class="text-indigo-600">${formatProb(targetArea)}</strong>, find the corresponding Z value.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(0 < Z < z) = ${formatProb(targetArea)}</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: `This is a reverse lookup. Scan the numbers inside the table on the right to find <strong>${formatProb(targetArea)}</strong>, then trace back to find its corresponding row (Z) and column header.`,
+                        correctAnswer: targetZ,
+                        zVal: targetZ,
+                        zVal2: null,
+                        mode: 'reverse_z'
+                    };
+                    break;
+                }
+                case 6: {
+                    // Second Reverse Z Question (Upper Right-Tail Reverse Lookup)
+                    const sampleZKeys = Object.keys(zTableData).filter(k => parseFloat(k) >= 0.4 && parseFloat(k) <= 2.3);
+                    const randRow = sampleZKeys[Math.floor(Math.random() * sampleZKeys.length)];
+                    const randColIdx = Math.floor(Math.random() * 10);
+                    const centerArea = zTableData[randRow][randColIdx];
+                    const targetZ = parseFloat((parseFloat(randRow) + randColIdx * 0.01).toFixed(2));
+                    const tailArea = parseFloat((0.5 - centerArea).toFixed(4));
+
+                    q = {
+                        typeLabel: "Round 7: Reverse Z Lookup (2 of 2)",
+                        prompt: `The upper right-tail probability beyond an unknown positive Z score is <strong class="text-indigo-600">${formatProb(tailArea)}</strong>. Find the positive Z value.<br><span class="text-sm font-normal text-slate-600 font-mono mt-1 block">Notation: P(Z > z) = ${formatProb(tailArea)}</span>`,
+                        explanationTitle: "Understanding this question:",
+                        explanationText: `Since the right tail is ${formatProb(tailArea)}, the area between the mean (Z = 0) and z is 0.5000 - ${formatProb(tailArea)} = <strong>${formatProb(centerArea)}</strong>. Find <strong>${formatProb(centerArea)}</strong> in the table to read Z!`,
+                        correctAnswer: targetZ,
+                        zVal: targetZ,
+                        zVal2: null,
+                        mode: 'reverse_z_right'
+                    };
+                    break;
+                }
+                case 7: {
+                    // Real-World Business Problem 1 (Right-Tail: Randomized scenario, mean, SD, and Z)
+                    const z = parseFloat((Math.random() * 2.1 + 0.45).toFixed(2));
+                    const templates = [
+                        () => {
+                            const mean = (Math.floor(Math.random() * 15) + 8) * 100; // $800 to $2,200
+                            const sd = (Math.floor(Math.random() * 5) + 2) * 50;    // $100 to $300
+                            const x = Number((mean + z * sd).toFixed(2));
+                            return {
+                                context: `A coffee chain's daily revenue per store is normally distributed with a mean (μ) of <strong>$${mean.toLocaleString()}</strong> and a standard deviation (σ) of <strong>$${sd.toLocaleString()}</strong>.`,
+                                question: `What is the probability that a randomly selected store earns <strong>more than $${x.toLocaleString()}</strong> today?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 10 + 6).toFixed(1)); // 6.0 to 16.0 min
+                            const sd = Number((Math.random() * 2.5 + 1.0).toFixed(1)); // 1.0 to 3.5 min
+                            const x = Number((mean + z * sd).toFixed(3));
+                            return {
+                                context: `Monthly customer support call handling time at a tech firm is normally distributed with a mean (μ) of <strong>${mean} minutes</strong> and a standard deviation (σ) of <strong>${sd} minutes</strong>.`,
+                                question: `What is the probability that a support call takes <strong>longer than ${x} minutes</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 20) + 30) * 10; // 300 to 490 units
+                            const sd = (Math.floor(Math.random() * 6) + 3) * 10;    // 30 to 80 units
+                            const x = Number((mean + z * sd).toFixed(2));
+                            return {
+                                context: `Daily online checkout orders at a retail brand are normally distributed with a mean (μ) of <strong>${mean} orders</strong> and a standard deviation (σ) of <strong>${sd} orders</strong>.`,
+                                question: `What is the probability that daily orders exceed <strong>${x} orders</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 40 + 50).toFixed(1)); // $50.0 to $90.0
+                            const sd = Number((Math.random() * 10 + 5).toFixed(1));    // $5.0 to $15.0
+                            const x = Number((mean + z * sd).toFixed(3));
+                            return {
+                                context: `Customer average basket spend at a supermarket is normally distributed with a mean (μ) of <strong>$${mean.toFixed(2)}</strong> and a standard deviation (σ) of <strong>$${sd.toFixed(2)}</strong>.`,
+                                question: `What is the probability that a shopper spends <strong>more than $${x}</strong>?`,
+                                mean, sd, x
+                            };
+                        }
+                    ];
+                    const sc = templates[Math.floor(Math.random() * templates.length)]();
+                    const tableVal = getTableArea(z);
+                    const finalProb = parseFloat((0.5 - tableVal).toFixed(4));
+
+                    const steps = [
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>${z.toFixed(2)}</strong>, then Right-Tail: <em>P</em>(<em>Z</em> &gt; ${z.toFixed(2)}) = 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: true
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>${z.toFixed(2)}</strong>, then Left-Tail: <em>P</em>(<em>Z</em> &lt; ${z.toFixed(2)}) = 0.5000 + Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.mean} &minus; ${sc.x}`, sc.sd)}<span>= <strong>&minus;${z.toFixed(2)}</strong>, then use Table(${z.toFixed(2)}) directly</span></div>`,
+                            correct: false
+                        }
+                    ];
+                    steps.sort(() => Math.random() - 0.5);
+
+                    q = {
+                        typeLabel: "Round 8: Business Application (1 of 3)",
+                        prompt: `<div class="space-y-1.5"><p class="text-sm font-normal text-slate-700">${sc.context}</p><p class="font-semibold text-slate-900">${sc.question}</p></div>`,
+                        explanationTitle: "Business Problem Workflow:",
+                        explanationText: `1. Select the correct standardization and right-tail formula above.<br>2. Calculate <em>Z</em> = ${z.toFixed(2)} and <strong>click the exact table cell</strong> for <em>Z</em> = ${z.toFixed(2)} in the table on the right!`,
+                        isBusiness: true,
+                        stepOptions: steps,
+                        expectedTableArea: tableVal,
+                        finalCalculatedProb: finalProb,
+                        formulaSummary: `0.5000 &minus; ${formatProb(tableVal)} = <strong>${formatProb(finalProb)}</strong>`,
+                        zVal: z,
+                        mode: 'business'
+                    };
+                    break;
+                }
+                case 8: {
+                    // Real-World Business Problem 2 (Left-Tail: Randomized scenario, mean, SD, and Z)
+                    const z = parseFloat((Math.random() * 2.1 + 0.45).toFixed(2));
+                    const templates = [
+                        () => {
+                            const mean = Math.floor(Math.random() * 25) + 36; // 36 to 60 hours
+                            const sd = Math.floor(Math.random() * 5) + 4;    // 4 to 8 hours
+                            const x = Number((mean - z * sd).toFixed(2));
+                            return {
+                                context: `Delivery transit times for an e-commerce logistics partner follow a normal distribution with a mean (μ) of <strong>${mean} hours</strong> and a standard deviation (σ) of <strong>${sd} hours</strong>.`,
+                                question: `What is the probability that a package arrives in <strong>less than ${x} hours</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 8 + 12).toFixed(1)); // 12.0 to 20.0 hours
+                            const sd = Number((Math.random() * 1.5 + 1.0).toFixed(1)); // 1.0 to 2.5 hours
+                            const x = Number((mean - z * sd).toFixed(3));
+                            return {
+                                context: `Battery lifespan for a smart warehouse scanner is normally distributed with a mean (μ) of <strong>${mean} hours</strong> and a standard deviation (σ) of <strong>${sd} hours</strong>.`,
+                                question: `What is the probability that a scanner battery lasts <strong>less than ${x} hours</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 10) + 15) * 10; // 150 to 240 ms
+                            const sd = (Math.floor(Math.random() * 4) + 2) * 5;     // 10 to 25 ms
+                            const x = Number((mean - z * sd).toFixed(2));
+                            return {
+                                context: `API server response latency for a cloud platform is normally distributed with a mean (μ) of <strong>${mean} ms</strong> and a standard deviation (σ) of <strong>${sd} ms</strong>.`,
+                                question: `What is the probability that a request completes in <strong>under ${x} ms</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 15) + 25) * 20; // 500 to 780 g
+                            const sd = (Math.floor(Math.random() * 5) + 2) * 10;    // 20 to 60 g
+                            const x = Number((mean - z * sd).toFixed(2));
+                            return {
+                                context: `Net fill weight of packaged coffee beans is normally distributed with a mean (μ) of <strong>${mean} g</strong> and a standard deviation (σ) of <strong>${sd} g</strong>.`,
+                                question: `What is the probability that a randomly inspected bag weighs <strong>less than ${x} g</strong>?`,
+                                mean, sd, x
+                            };
+                        }
+                    ];
+                    const sc = templates[Math.floor(Math.random() * templates.length)]();
+                    const tableVal = getTableArea(z);
+                    const finalProb = parseFloat((0.5 - tableVal).toFixed(4));
+
+                    const steps = [
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>&minus;${z.toFixed(2)}</strong>, then Left-Tail: <em>P</em>(<em>Z</em> &lt; &minus;${z.toFixed(2)}) = 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: true
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>&minus;${z.toFixed(2)}</strong>, then compute: 0.5000 + Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.mean} &minus; ${sc.x}`, sc.sd)}<span>= <strong>${z.toFixed(2)}</strong>, then multiply 2 &times; Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        }
+                    ];
+                    steps.sort(() => Math.random() - 0.5);
+
+                    q = {
+                        typeLabel: "Round 9: Business Application (2 of 3)",
+                        prompt: `<div class="space-y-1.5"><p class="text-sm font-normal text-slate-700">${sc.context}</p><p class="font-semibold text-slate-900">${sc.question}</p></div>`,
+                        explanationTitle: "Business Problem Workflow:",
+                        explanationText: `1. Select the correct <em>Z</em>-score formula and left-tail step above.<br>2. Using |<em>Z</em>| = ${z.toFixed(2)}, <strong>click the exact table cell</strong> for ${z.toFixed(2)} on the right!`,
+                        isBusiness: true,
+                        stepOptions: steps,
+                        expectedTableArea: tableVal,
+                        finalCalculatedProb: finalProb,
+                        formulaSummary: `0.5000 &minus; ${formatProb(tableVal)} = <strong>${formatProb(finalProb)}</strong>`,
+                        zVal: z,
+                        mode: 'business'
+                    };
+                    break;
+                }
+                case 9: {
+                    // Real-World Business Problem 3 (Between Mean & Upper Bound: Randomized scenario, mean, SD, and Z)
+                    const z = parseFloat((Math.random() * 2.1 + 0.45).toFixed(2));
+                    const templates = [
+                        () => {
+                            const mean = (Math.floor(Math.random() * 12) + 8) * 500; // $4,000 to $9,500
+                            const sd = (Math.floor(Math.random() * 6) + 4) * 100;   // $400 to $900
+                            const x = Number((mean + z * sd).toFixed(2));
+                            return {
+                                context: `Weekly order fulfillment values at a B2B supplier are normally distributed with a mean (μ) of <strong>$${mean.toLocaleString()}</strong> and a standard deviation (σ) of <strong>$${sd.toLocaleString()}</strong>.`,
+                                question: `What is the probability that a randomly selected weekly order is valued <strong>between $${mean.toLocaleString()} and $${x.toLocaleString()}</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 15 + 18).toFixed(1)); // 18.0 to 33.0 min
+                            const sd = Number((Math.random() * 3.0 + 1.5).toFixed(1)); // 1.5 to 4.5 min
+                            const x = Number((mean + z * sd).toFixed(3));
+                            return {
+                                context: `Assembly line completion times for an electronics unit follow a normal distribution with a mean (μ) of <strong>${mean} minutes</strong> and a standard deviation (σ) of <strong>${sd} minutes</strong>.`,
+                                question: `What is the probability that a unit is assembled in <strong>between ${mean} and ${x} minutes</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 10) + 12) * 5; // 60 to 105 kWh
+                            const sd = Math.floor(Math.random() * 8) + 5;           // 5 to 12 kWh
+                            const x = Number((mean + z * sd).toFixed(2));
+                            return {
+                                context: `Daily energy consumption per commercial office suite is normally distributed with a mean (μ) of <strong>${mean} kWh</strong> and a standard deviation (σ) of <strong>${sd} kWh</strong>.`,
+                                question: `What is the probability that a suite consumes <strong>between ${mean} and ${x} kWh</strong>?`,
+                                mean, sd, x
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 15) + 40) * 100; // $4,000 to $5,400
+                            const sd = (Math.floor(Math.random() * 5) + 3) * 100;    // $300 to $700
+                            const x = Number((mean + z * sd).toFixed(2));
+                            return {
+                                context: `Monthly employee productivity bonus payouts at a sales agency are normally distributed with a mean (μ) of <strong>$${mean.toLocaleString()}</strong> and a standard deviation (σ) of <strong>$${sd.toLocaleString()}</strong>.`,
+                                question: `What is the probability that a payout falls <strong>between $${mean.toLocaleString()} and $${x.toLocaleString()}</strong>?`,
+                                mean, sd, x
+                            };
+                        }
+                    ];
+                    const sc = templates[Math.floor(Math.random() * templates.length)]();
+                    const tableVal = getTableArea(z);
+                    const finalProb = parseFloat(tableVal.toFixed(4));
+
+                    const steps = [
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>${z.toFixed(2)}</strong>, then Center-to-<em>Z</em>: <em>P</em>(0 &lt; <em>Z</em> &lt; ${z.toFixed(2)}) = Table(${z.toFixed(2)})</span></div>`,
+                            correct: true
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>${z.toFixed(2)}</strong>, then subtract: 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.x} &minus; ${sc.mean}`, sc.sd)}<span>= <strong>${z.toFixed(2)}</strong>, then add: 0.5000 + Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        }
+                    ];
+                    steps.sort(() => Math.random() - 0.5);
+
+                    q = {
+                        typeLabel: "Round 10: Business Application (3 of 3)",
+                        prompt: `<div class="space-y-1.5"><p class="text-sm font-normal text-slate-700">${sc.context}</p><p class="font-semibold text-slate-900">${sc.question}</p></div>`,
+                        explanationTitle: "Business Problem Workflow:",
+                        explanationText: `1. Select the correct standardization and interval formula above.<br>2. Calculate <em>Z</em> = ${z.toFixed(2)} and <strong>click the exact table cell</strong> for <em>Z</em> = ${z.toFixed(2)} on the right!`,
+                        isBusiness: true,
+                        stepOptions: steps,
+                        expectedTableArea: tableVal,
+                        finalCalculatedProb: finalProb,
+                        formulaSummary: `Table(${z.toFixed(2)}) = <strong>${formatProb(finalProb)}</strong>`,
+                        zVal: z,
+                        mode: 'business'
+                    };
+                    break;
+                }
+                case 10: {
+                    // Sampling Distribution 1 (Right-Tail for Sample Mean X-bar)
+                    const z = parseFloat((Math.random() * 2.1 + 0.45).toFixed(2));
+                    const sampleSizes = [16, 25, 36, 49, 64, 81, 100];
+                    const n = sampleSizes[Math.floor(Math.random() * sampleSizes.length)];
+                    const sqrtN = Math.sqrt(n);
+
+                    const templates = [
+                        () => {
+                            const mean = (Math.floor(Math.random() * 15) + 40) * 10; // $400 to $540
+                            const sd = (Math.floor(Math.random() * 5) + 2) * sqrtN;   // exact multiple of sqrt(n)
+                            const se = sd / sqrtN;
+                            const xBar = Number((mean + z * se).toFixed(2));
+                            return {
+                                context: `Weekly grocery expenditure per household has a population mean (μ) of <strong>$${mean}</strong> and a population standard deviation (σ) of <strong>$${sd}</strong>. A random sample of <strong>n = ${n}</strong> households is selected.`,
+                                question: `What is the probability that the <strong>sample mean</strong> expenditure exceeds <strong>$${xBar}</strong>?`,
+                                mean, sd, n, xBar
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 10 + 15).toFixed(1)); // 15.0 to 25.0 min
+                            const sd = Number(((Math.floor(Math.random() * 4) + 2) * 0.5 * sqrtN).toFixed(1));
+                            const se = sd / sqrtN;
+                            const xBar = Number((mean + z * se).toFixed(3));
+                            return {
+                                context: `Customer commute times to a regional office have a population mean (μ) of <strong>${mean} minutes</strong> and a population standard deviation (σ) of <strong>${sd} minutes</strong>. A random sample of <strong>n = ${n}</strong> commuters is surveyed.`,
+                                question: `What is the probability that the <strong>sample mean</strong> commute time is <strong>greater than ${xBar} minutes</strong>?`,
+                                mean, sd, n, xBar
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 12) + 20) * 50; // 1,000 to 1,550 lumens
+                            const sd = (Math.floor(Math.random() * 6) + 4) * 5 * sqrtN;
+                            const se = sd / sqrtN;
+                            const xBar = Number((mean + z * se).toFixed(2));
+                            return {
+                                context: `Brightness output of commercial LED panels has a population mean (μ) of <strong>${mean} lumens</strong> and a population standard deviation (σ) of <strong>${sd} lumens</strong>. A quality inspector tests a random sample of <strong>n = ${n}</strong> panels.`,
+                                question: `What is the probability that the <strong>sample mean</strong> brightness is <strong>more than ${xBar} lumens</strong>?`,
+                                mean, sd, n, xBar
+                            };
+                        }
+                    ];
+                    const sc = templates[Math.floor(Math.random() * templates.length)]();
+                    const tableVal = getTableArea(z);
+                    const finalProb = parseFloat((0.5 - tableVal).toFixed(4));
+
+                    const steps = [
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.xBar} &minus; ${sc.mean}`, formatStdErrFraction(sc.sd, sc.n))}<span>= <strong>${z.toFixed(2)}</strong>, then Right-Tail: <em>P</em>(<em>Z</em> &gt; ${z.toFixed(2)}) = 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: true
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.xBar} &minus; ${sc.mean}`, sc.sd)}<span>(forgot &radic;${sc.n}), then Right-Tail: 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.xBar} &minus; ${sc.mean}`, formatStdErrFraction(sc.sd, sc.n))}<span>= <strong>${z.toFixed(2)}</strong>, then Left-Tail: 0.5000 + Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        }
+                    ];
+                    steps.sort(() => Math.random() - 0.5);
+
+                    q = {
+                        typeLabel: "Round 11: Sampling Distribution (1 of 3)",
+                        prompt: `<div class="space-y-1.5"><p class="text-sm font-normal text-slate-700">${sc.context}</p><p class="font-semibold text-slate-900">${sc.question}</p></div>`,
+                        explanationTitle: "Sampling Distribution Workflow:",
+                        explanationText: `1. Remember to divide &sigma; by &radic;<em>n</em> (&sigma; / &radic;${sc.n}) when standardizing a sample mean!<br>2. Calculate <em>Z</em> = ${z.toFixed(2)} and <strong>click the exact table cell</strong> for <em>Z</em> = ${z.toFixed(2)} on the right!`,
+                        isBusiness: true,
+                        stepOptions: steps,
+                        expectedTableArea: tableVal,
+                        finalCalculatedProb: finalProb,
+                        formulaSummary: `0.5000 &minus; ${formatProb(tableVal)} = <strong>${formatProb(finalProb)}</strong>`,
+                        zVal: z,
+                        mode: 'business'
+                    };
+                    break;
+                }
+                case 11: {
+                    // Sampling Distribution 2 (Left-Tail for Sample Mean X-bar)
+                    const z = parseFloat((Math.random() * 2.1 + 0.45).toFixed(2));
+                    const sampleSizes = [16, 25, 36, 49, 64, 81, 100];
+                    const n = sampleSizes[Math.floor(Math.random() * sampleSizes.length)];
+                    const sqrtN = Math.sqrt(n);
+
+                    const templates = [
+                        () => {
+                            const mean = (Math.floor(Math.random() * 10) + 12) * 50; // 600 to 1,050 ml
+                            const sd = (Math.floor(Math.random() * 5) + 2) * 4 * sqrtN;
+                            const se = sd / sqrtN;
+                            const xBar = Number((mean - z * se).toFixed(2));
+                            return {
+                                context: `Bottled beverage fill volumes have a population mean (μ) of <strong>${mean} ml</strong> and a population standard deviation (σ) of <strong>${sd} ml</strong>. A batch sample of <strong>n = ${n}</strong> bottles is inspected.`,
+                                question: `What is the probability that the <strong>sample mean</strong> volume is <strong>less than ${xBar} ml</strong>?`,
+                                mean, sd, n, xBar
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 6 + 8).toFixed(1)); // 8.0 to 14.0 kg
+                            const sd = Number(((Math.floor(Math.random() * 4) + 2) * 0.4 * sqrtN).toFixed(1));
+                            const se = sd / sqrtN;
+                            const xBar = Number((mean - z * se).toFixed(3));
+                            return {
+                                context: `Carry-on luggage weights for domestic flights have a population mean (μ) of <strong>${mean} kg</strong> and a population standard deviation (σ) of <strong>${sd} kg</strong>. A random sample of <strong>n = ${n}</strong> bags is weighed.`,
+                                question: `What is the probability that the <strong>sample mean</strong> weight is <strong>under ${xBar} kg</strong>?`,
+                                mean, sd, n, xBar
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 15) + 60) * 10; // $600 to $740
+                            const sd = (Math.floor(Math.random() * 6) + 3) * 10 * sqrtN;
+                            const se = sd / sqrtN;
+                            const xBar = Number((mean - z * se).toFixed(2));
+                            return {
+                                context: `Monthly utility bills for commercial storefronts have a population mean (μ) of <strong>$${mean}</strong> and a population standard deviation (σ) of <strong>$${sd}</strong>. A random sample of <strong>n = ${n}</strong> storefronts is audited.`,
+                                question: `What is the probability that the <strong>sample mean</strong> bill is <strong>below $${xBar}</strong>?`,
+                                mean, sd, n, xBar
+                            };
+                        }
+                    ];
+                    const sc = templates[Math.floor(Math.random() * templates.length)]();
+                    const tableVal = getTableArea(z);
+                    const finalProb = parseFloat((0.5 - tableVal).toFixed(4));
+
+                    const steps = [
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.xBar} &minus; ${sc.mean}`, formatStdErrFraction(sc.sd, sc.n))}<span>= <strong>&minus;${z.toFixed(2)}</strong>, then Left-Tail: <em>P</em>(<em>Z</em> &lt; &minus;${z.toFixed(2)}) = 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: true
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.xBar} &minus; ${sc.mean}`, formatStdErrFraction(sc.sd, sc.n))}<span>= <strong>&minus;${z.toFixed(2)}</strong>, then compute: 0.5000 + Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> =</span>${formatMathFraction(`${sc.xBar} &minus; ${sc.mean}`, `${sc.sd} &times; &radic;${sc.n}`)}<span>= <strong>&minus;${z.toFixed(2)}</strong>, then use Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        }
+                    ];
+                    steps.sort(() => Math.random() - 0.5);
+
+                    q = {
+                        typeLabel: "Round 12: Sampling Distribution (2 of 3)",
+                        prompt: `<div class="space-y-1.5"><p class="text-sm font-normal text-slate-700">${sc.context}</p><p class="font-semibold text-slate-900">${sc.question}</p></div>`,
+                        explanationTitle: "Sampling Distribution Workflow:",
+                        explanationText: `1. Standardize using the standard error &sigma; / &radic;${sc.n} and select the left-tail step.<br>2. Using |<em>Z</em>| = ${z.toFixed(2)}, <strong>click the exact table cell</strong> for ${z.toFixed(2)} on the right!`,
+                        isBusiness: true,
+                        stepOptions: steps,
+                        expectedTableArea: tableVal,
+                        finalCalculatedProb: finalProb,
+                        formulaSummary: `0.5000 &minus; ${formatProb(tableVal)} = <strong>${formatProb(finalProb)}</strong>`,
+                        zVal: z,
+                        mode: 'business'
+                    };
+                    break;
+                }
+                case 12: {
+                    // Sampling Distribution 3 (Symmetric Interval around Population Mean for Sample Mean X-bar)
+                    const z = parseFloat((Math.random() * 1.9 + 0.50).toFixed(2));
+                    const sampleSizes = [16, 25, 36, 49, 64, 81, 100];
+                    const n = sampleSizes[Math.floor(Math.random() * sampleSizes.length)];
+                    const sqrtN = Math.sqrt(n);
+
+                    const templates = [
+                        () => {
+                            const mean = (Math.floor(Math.random() * 10) + 14) * 5; // 70 to 115 bpm
+                            const sd = (Math.floor(Math.random() * 4) + 2) * sqrtN;
+                            const se = sd / sqrtN;
+                            const margin = Number((z * se).toFixed(2));
+                            const low = Number((mean - margin).toFixed(2));
+                            const high = Number((mean + margin).toFixed(2));
+                            return {
+                                context: `Resting heart rates for adult patients have a population mean (μ) of <strong>${mean} bpm</strong> and a population standard deviation (σ) of <strong>${sd} bpm</strong>. A clinical trial evaluates a random sample of <strong>n = ${n}</strong> patients.`,
+                                question: `What is the probability that the <strong>sample mean</strong> heart rate falls <strong>between ${low} bpm and ${high} bpm</strong>?`,
+                                mean, sd, n, low, high, margin
+                            };
+                        },
+                        () => {
+                            const mean = (Math.floor(Math.random() * 15) + 20) * 100; // $2,000 to $3,400
+                            const sd = (Math.floor(Math.random() * 5) + 3) * 50 * sqrtN;
+                            const se = sd / sqrtN;
+                            const margin = Number((z * se).toFixed(2));
+                            const low = Number((mean - margin).toFixed(2));
+                            const high = Number((mean + margin).toFixed(2));
+                            return {
+                                context: `Monthly rent prices for studio apartments have a population mean (μ) of <strong>$${mean.toLocaleString()}</strong> and a population standard deviation (σ) of <strong>$${sd.toLocaleString()}</strong>. A housing agency samples <strong>n = ${n}</strong> apartments.`,
+                                question: `What is the probability that the <strong>sample mean</strong> rent is <strong>between $${low.toLocaleString()} and $${high.toLocaleString()}</strong>?`,
+                                mean, sd, n, low, high, margin
+                            };
+                        },
+                        () => {
+                            const mean = Number((Math.random() * 20 + 40).toFixed(1)); // 40.0 to 60.0 sec
+                            const sd = Number(((Math.floor(Math.random() * 4) + 2) * 1.5 * sqrtN).toFixed(1));
+                            const se = sd / sqrtN;
+                            const margin = Number((z * se).toFixed(3));
+                            const low = Number((mean - margin).toFixed(3));
+                            const high = Number((mean + margin).toFixed(3));
+                            return {
+                                context: `Customer service queue wait times have a population mean (μ) of <strong>${mean} seconds</strong> and a population standard deviation (σ) of <strong>${sd} seconds</strong>. A manager monitors a random sample of <strong>n = ${n}</strong> calls.`,
+                                question: `What is the probability that the <strong>sample mean</strong> wait time is <strong>within &plusmn;${margin} seconds</strong> of the population mean (between ${low}s and ${high}s)?`,
+                                mean, sd, n, low, high, margin
+                            };
+                        }
+                    ];
+                    const sc = templates[Math.floor(Math.random() * templates.length)]();
+                    const tableVal = getTableArea(z);
+                    const finalProb = parseFloat((2 * tableVal).toFixed(4));
+
+                    const steps = [
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> = &plusmn;</span>${formatMathFraction(`${sc.high} &minus; ${sc.mean}`, formatStdErrFraction(sc.sd, sc.n))}<span>= <strong>&plusmn;${z.toFixed(2)}</strong>, then Symmetric: <em>P</em>(&minus;${z.toFixed(2)} &lt; <em>Z</em> &lt; ${z.toFixed(2)}) = 2 &times; Table(${z.toFixed(2)})</span></div>`,
+                            correct: true
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> = &plusmn;</span>${formatMathFraction(`${sc.high} &minus; ${sc.mean}`, formatStdErrFraction(sc.sd, sc.n))}<span>= <strong>&plusmn;${z.toFixed(2)}</strong>, then subtract: 0.5000 &minus; Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        },
+                        {
+                            text: `<div class="flex flex-wrap items-center gap-1"><span>Standardize: <em>Z</em> = &plusmn;</span>${formatMathFraction(`${sc.high} &minus; ${sc.mean}`, sc.sd)}<span>(forgot &radic;${sc.n}), then use Table(${z.toFixed(2)})</span></div>`,
+                            correct: false
+                        }
+                    ];
+                    steps.sort(() => Math.random() - 0.5);
+
+                    q = {
+                        typeLabel: "Round 13: Sampling Distribution (3 of 3)",
+                        prompt: `<div class="space-y-1.5"><p class="text-sm font-normal text-slate-700">${sc.context}</p><p class="font-semibold text-slate-900">${sc.question}</p></div>`,
+                        explanationTitle: "Sampling Distribution Workflow:",
+                        explanationText: `1. Standardize the symmetric bounds using &sigma; / &radic;${sc.n} to get <em>Z</em> = &plusmn;${z.toFixed(2)}.<br>2. <strong>Click the exact table cell</strong> for <em>Z</em> = ${z.toFixed(2)} on the right (the final probability doubles that area)!`,
+                        isBusiness: true,
+                        stepOptions: steps,
+                        expectedTableArea: tableVal,
+                        finalCalculatedProb: finalProb,
+                        formulaSummary: `2 &times; ${formatProb(tableVal)} = <strong>${formatProb(finalProb)}</strong>`,
+                        zVal: z,
+                        mode: 'business'
+                    };
+                    break;
+                }
+            }
+
+            if (!q.isBusiness) {
+                const allModes = ['area', 'inequality_left', 'inequality_right', 'inequality_between', 'inequality_symmetric'];
+                const reverseModes = ['reverse_z', 'reverse_z_right', 'reverse_z_left'];
+                const isReverse = q.mode.startsWith('reverse_z');
+                const candidatePool = isReverse
+                    ? reverseModes.filter(m => m !== q.mode)
+                    : allModes.filter(m => m !== q.mode);
+
+                const distractors = candidatePool.sort(() => Math.random() - 0.5).slice(0, 2);
+                const options = [
+                    { mode: q.mode, zVal1: q.zVal, zVal2: q.zVal2, correct: true },
+                    { mode: distractors[0], zVal1: q.zVal, zVal2: q.zVal2, correct: false },
+                    { mode: distractors[1], zVal1: q.zVal, zVal2: q.zVal2, correct: false }
+                ];
+                options.sort(() => Math.random() - 0.5);
+                q.diagramOptions = options;
+            }
+
+            return q;
+        }
+
+        function startGame() {
+            currentRoundIndex = 0;
+            score = 0;
+            document.getElementById('current-score').innerText = '0';
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('score-display').classList.remove('hidden');
+            document.getElementById('score-display').classList.add('flex');
+            loadRound();
+        }
+
+        function loadRound() {
+            selectedDiagramIndex = null;
+            diagramSelectedCorrectly = false;
+            selectedStepIndex = null;
+            stepSelectedCorrectly = false;
+            clickedTableValue = null;
+            clickedTableZ = null;
+            clearTableHighlights();
+
+            const displayEl = document.getElementById('selected-table-val-display');
+            if (displayEl) {
+                displayEl.innerText = 'None clicked yet';
+            }
+
+            currentQuestion = generateQuestion(currentRoundIndex);
+
+            document.getElementById('current-round').innerText = currentRoundIndex + 1;
+            document.getElementById('question-type-label').innerText = currentQuestion.typeLabel;
+            document.getElementById('question-progress').innerText = `${currentRoundIndex + 1} of ${totalRounds}`;
+            document.getElementById('progress-bar').style.width = `${((currentRoundIndex + 1) / totalRounds) * 100}%`;
+
+            document.getElementById('question-prompt').innerHTML = currentQuestion.prompt;
+            document.getElementById('explanation-title').innerText = currentQuestion.explanationTitle;
+            document.getElementById('explanation-text').innerHTML = currentQuestion.explanationText;
+
+            const fb = document.getElementById('feedback-box');
+            fb.classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            if (currentQuestion.isBusiness) {
+                document.getElementById('diagram-section').classList.add('hidden');
+                document.getElementById('standard-input-area').classList.add('hidden');
+                document.getElementById('step-section').classList.remove('hidden');
+                document.getElementById('business-input-area').classList.remove('hidden');
+                renderStepOptions();
+            } else {
+                document.getElementById('step-section').classList.add('hidden');
+                document.getElementById('business-input-area').classList.add('hidden');
+                document.getElementById('diagram-section').classList.remove('hidden');
+                document.getElementById('standard-input-area').classList.remove('hidden');
+
+                const ansInput = document.getElementById('user-answer');
+                ansInput.value = '';
+                ansInput.disabled = false;
+                if (currentQuestion.mode.startsWith('reverse_z')) {
+                    document.getElementById('input-label').innerText = 'Enter the Z-score (e.g. 1.25):';
+                    ansInput.placeholder = '0.00';
+                    ansInput.step = '0.01';
+                } else {
+                    document.getElementById('input-label').innerText = 'Enter your probability answer (e.g. 0.1915):';
+                    ansInput.placeholder = '0.0000';
+                    ansInput.step = '0.0001';
+                }
+                renderDiagramOptions();
+            }
+        }
+
+        function renderStepOptions() {
+            const container = document.getElementById('step-options');
+            container.innerHTML = '';
+
+            currentQuestion.stepOptions.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = "bg-white p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:border-indigo-400 transition text-xs text-slate-800 leading-relaxed";
+                btn.id = `step-card-${idx}`;
+                btn.onclick = () => selectStepOption(idx);
+                btn.innerHTML = `<span class="font-bold text-indigo-700 mr-1.5">Option ${String.fromCharCode(65 + idx)}:</span> ${opt.text}`;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectStepOption(idx) {
+            currentQuestion.stepOptions.forEach((opt, i) => {
+                const c = document.getElementById(`step-card-${i}`);
+                c.classList.remove('border-indigo-600', 'bg-indigo-50/50', 'border-emerald-500', 'bg-emerald-50/40', 'border-rose-500', 'bg-rose-50/40');
+                if (i === idx) {
+                    c.classList.add('border-indigo-600', 'bg-indigo-50/50');
+                }
+            });
+            selectedStepIndex = idx;
+            stepSelectedCorrectly = currentQuestion.stepOptions[idx].correct;
+        }
+
+        function renderDiagramOptions() {
+            const container = document.getElementById('diagram-options');
+            container.innerHTML = '';
+
+            currentQuestion.diagramOptions.forEach((opt, idx) => {
+                const svgMarkup = getSvgMarkup(opt.mode, opt.zVal1, opt.zVal2);
+                const card = document.createElement('div');
+                card.className = "bg-white p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:border-indigo-400 transition text-center relative";
+                card.id = `diag-card-${idx}`;
+                card.onclick = () => selectDiagram(idx);
+
+                card.innerHTML = `
+                    <div class="text-[10px] font-bold text-slate-500 mb-1">Option ${String.fromCharCode(65 + idx)}</div>
+                    ${svgMarkup}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectDiagram(idx) {
+            // Highlight selected card neutrally until submission
+            currentQuestion.diagramOptions.forEach((opt, i) => {
+                const c = document.getElementById(`diag-card-${i}`);
+                c.classList.remove('border-indigo-600', 'bg-indigo-50/50', 'border-emerald-500', 'bg-emerald-50/30', 'border-rose-500', 'bg-rose-50/30');
+                if (i === idx) {
+                    c.classList.add('border-indigo-600', 'bg-indigo-50/50');
+                }
+            });
+
+            selectedDiagramIndex = idx;
+            diagramSelectedCorrectly = currentQuestion.diagramOptions[idx].correct;
+        }
+
+        function submitAnswer() {
+            if (currentQuestion.isBusiness) {
+                if (selectedStepIndex === null) {
+                    showFeedback("Please select one of the 3 solution steps first.", false);
+                    return;
+                }
+                if (clickedTableValue === null) {
+                    showFeedback("Please click the corresponding probability number in the normal distribution table on the right!", false);
+                    return;
+                }
+
+                const isTableClickCorrect = Math.abs(clickedTableValue - currentQuestion.expectedTableArea) <= 0.0001;
+                let roundPoints = 0;
+                if (stepSelectedCorrectly) roundPoints += 1;
+                if (isTableClickCorrect) roundPoints += 1;
+                score += roundPoints;
+                document.getElementById('current-score').innerText = score;
+
+                const expectedAreaStr = formatProb(currentQuestion.expectedTableArea);
+                const finalProbStr = formatProb(currentQuestion.finalCalculatedProb);
+                const summaryStr = currentQuestion.formulaSummary || `<strong>${finalProbStr}</strong>`;
+
+                if (roundPoints === 2) {
+                    showFeedback(`🎉 Excellent (+2 pts)! You selected the right step and clicked the exact table value (<strong>${expectedAreaStr}</strong>). Final Business Probability: ${summaryStr}!`, true);
+                } else if (roundPoints === 1) {
+                    let detail = stepSelectedCorrectly
+                        ? `You earned +1 pt for the right step! However, you clicked ${formatProb(clickedTableValue)} instead of <strong>${expectedAreaStr}</strong> (at Z = ${currentQuestion.zVal.toFixed(2)}). Final answer: ${summaryStr}.`
+                        : `You earned +1 pt for clicking the right table value (<strong>${expectedAreaStr}</strong>)! However, the selected formula step was incorrect. Final answer: ${summaryStr}.`;
+                    showFeedback(`👍 Partial Credit (+1 pt): ${detail}`, true);
+                } else {
+                    showFeedback(`❌ Not quite (+0 pts). The correct table lookup at Z = ${currentQuestion.zVal.toFixed(2)} is <strong>${expectedAreaStr}</strong>, giving a final probability of ${summaryStr}.`, false);
+                }
+
+                highlightZInTable(currentQuestion.zVal);
+                document.getElementById('next-btn').classList.remove('hidden');
+                return;
+            }
+
+            if (selectedDiagramIndex === null) {
+                showFeedback("Please select a correct normal distribution diagram option first.", false);
+                return;
+            }
+
+            const rawInput = document.getElementById('user-answer').value;
+            const userInputValue = parseFloat(rawInput);
+            if (isNaN(userInputValue)) {
+                showFeedback("Please enter a valid number in the textbox.", false);
+                return;
+            }
+
+            const tolerance = 0.0015;
+            const diff = Math.abs(userInputValue - currentQuestion.correctAnswer);
+            const isValueCorrect = diff <= tolerance;
+
+            // Calculate round points: +1 for correct diagram, +1 for correct numerical value
+            let roundPoints = 0;
+            if (diagramSelectedCorrectly) roundPoints += 1;
+            if (isValueCorrect) roundPoints += 1;
+            score += roundPoints;
+            document.getElementById('current-score').innerText = score;
+
+            const formattedCorrect = currentQuestion.mode.startsWith('reverse_z') ? currentQuestion.correctAnswer.toFixed(2) : formatProb(currentQuestion.correctAnswer);
+
+            if (roundPoints === 2) {
+                showFeedback(`🎉 Perfect (+2 pts)! Both the diagram and calculated value (${formattedCorrect}) are spot on!`, true);
+            } else if (roundPoints === 1) {
+                let partialDetail = diagramSelectedCorrectly
+                    ? `You earned +1 pt for selecting the correct diagram! However, your numerical answer was ${userInputValue}, and the correct value is <strong>${formattedCorrect}</strong>.`
+                    : `You earned +1 pt for entering the correct value (${formattedCorrect})! However, the selected diagram was incorrect.`;
+                showFeedback(`👍 Partial Credit (+1 pt): ${partialDetail}`, true);
+            } else {
+                showFeedback(`❌ Not quite right (+0 pts). Both the diagram and numerical value were incorrect. The correct value is <strong>${formattedCorrect}</strong>.`, false);
+            }
+
+            document.getElementById('user-answer').disabled = true;
+            document.getElementById('next-btn').classList.remove('hidden');
+            highlightZInTable(currentQuestion.zVal);
+        }
+
+        function showFeedback(msg, success) {
+            const fb = document.getElementById('feedback-box');
+            fb.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'border', 'border-emerald-200', 'bg-rose-50', 'text-rose-900', 'border-rose-200');
+            if (success) {
+                fb.classList.add('bg-emerald-50', 'text-emerald-900', 'border', 'border-emerald-200');
+            } else {
+                fb.classList.add('bg-rose-50', 'text-rose-900', 'border', 'border-rose-200');
+            }
+            fb.innerHTML = msg;
+        }
+
+        function nextRound() {
+            currentRoundIndex++;
+            if (currentRoundIndex < totalRounds) {
+                loadRound();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            const emojiEl = document.getElementById('result-emoji');
+            const remarkEl = document.getElementById('score-remark');
+
+            if (score === 26) {
+                emojiEl.innerText = "🏆";
+                remarkEl.innerText = "Flawless! You are a Normal & Sampling Distribution Master!";
+            } else if (score >= 18) {
+                emojiEl.innerText = "🌟";
+                remarkEl.innerText = "Great job! You have a solid grasp of Z-tables, business problems, and sampling distributions.";
+            } else {
+                emojiEl.innerText = "📚";
+                remarkEl.innerText = "Good effort! Practice standard error (&sigma;/&radic;n) and Z-table lookups again.";
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        // Initialize table on load
+        window.onload = function() {
+            renderTable();
+        };
+    </script>
+</body>
+</html>
